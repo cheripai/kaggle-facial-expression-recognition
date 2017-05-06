@@ -24,20 +24,20 @@ class CNN:
 
         self.model = self.add_top(base, outputs, dropout)
         opt = Adam(lr=lr, decay=decay)
-        self.model.compile(optimizer=opt, loss="mse")
+        self.model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
 
 
     def add_top(self, base_model, outputs, dropout):
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
-        x = Dense(512, activation="relu")(x)
+        x = Dense(1024, activation="relu")(x)
         x = BatchNormalization()(x)
         x = Dropout(dropout)(x)
-        x = Dense(512, activation="relu")(x)
+        x = Dense(1024, activation="relu")(x)
         x = BatchNormalization()(x)
         x = Dropout(dropout)(x)
         predictions = Dense(outputs, activation="softmax")(x)
-        model = Model(input=base_model.input, output=predictions)
+        model = Model(inputs=base_model.input, outputs=predictions)
         for layer in base_model.layers:
             layer.trainable = False
         return model
