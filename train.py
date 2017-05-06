@@ -3,12 +3,14 @@ from keras.preprocessing.image import ImageDataGenerator
 from models.cnn import Inception, ResNet, VGG
 
 
-IMG_SIZE = 48
+IMG_SIZE = 200
 
 
-# TODO: Data augmentation
-train_datagen = ImageDataGenerator(rescale=1. / 255)
-test_datagen = ImageDataGenerator(rescale=1. / 255)
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    horizontal_flip=True,
+    )
+test_datagen = ImageDataGenerator(rescale=1./255)
 
 train_generator = train_datagen.flow_from_directory(
     "data/train", target_size=(IMG_SIZE, IMG_SIZE), batch_size=8, class_mode="categorical", shuffle=True)
@@ -18,7 +20,7 @@ validation_generator = test_datagen.flow_from_directory(
 
 
 if __name__ == "__main__":
-    cnn = VGG(3, lr=0.001, dropout=0.2, decay=0.01)
+    cnn = ResNet(3, lr=0.001, dropout=0.0, decay=0.001)
     callbacks = [TensorBoard()]
     cnn.model.fit_generator(
         train_generator,
