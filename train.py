@@ -1,4 +1,4 @@
-from keras.callbacks.TensorBoard import TensorBoard
+from keras.callbacks import TensorBoard
 from keras.preprocessing.image import ImageDataGenerator
 from models.cnn import Inception, ResNet, VGG
 
