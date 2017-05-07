@@ -9,6 +9,9 @@ IMG_SIZE = 200
 train_datagen = ImageDataGenerator(
     rescale=1./255,
     horizontal_flip=True,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    # rotation_range=15,
     )
 test_datagen = ImageDataGenerator(rescale=1./255)
 
