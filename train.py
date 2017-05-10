@@ -1,6 +1,6 @@
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
-from models.cnn import CNN
+from models.cnn import CNN, Inception_FCN
 
 IMG_SIZE = 48
 
@@ -20,7 +20,8 @@ validation_generator = test_datagen.flow_from_directory(
     "data/valid", target_size=(IMG_SIZE, IMG_SIZE), color_mode="grayscale", batch_size=1, class_mode="categorical", shuffle=False)
 
 if __name__ == "__main__":
-    cnn = CNN(3, (48, 48, 1), lr=0.001, dropout=0.2, decay=0.001)
+    # cnn = CNN(3, (48, 48, 1), lr=0.001, dropout=0.4, decay=0.001)
+    cnn = Inception_FCN(3, (48, 48, 1), lr=0.001, dropout=0.1, decay=0.001)
     print(cnn.model.summary())
     callbacks = [
         TensorBoard(), ModelCheckpoint("models/weights.h5", monitor="val_loss", save_best_only=True, save_weights_only=True)
