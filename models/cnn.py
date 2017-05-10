@@ -9,7 +9,7 @@ from keras.optimizers import Adam
 
 class CNN:
 
-    def __init__(self, outputs, input_shape, lr, decay, dropout):
+    def __init__(self, outputs, input_shape, lr=0.001, decay=0, dropout=0):
 
         img_input = Input(shape=input_shape)
         x = Conv2D(64, (3, 3), padding="same")(img_input)
@@ -79,7 +79,7 @@ class CNN:
 
 def Inception_FCN():
 
-    def __init__(self, outputs, input_shape, lr, decay, dropout):
+    def __init__(self, outputs, input_shape, lr=0.001, decay=0, dropout=0):
         img_input = Input(shape=input_shape)
         x = inception_block(img_input)
         x = inception_block(x)
