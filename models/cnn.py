@@ -2,57 +2,112 @@ from keras.applications.inception_v3 import InceptionV3
 from keras.applications.resnet50 import ResNet50
 from keras.applications.vgg16 import VGG16
 from keras.datasets import cifar10
-from keras.layers import Dense, Dropout, GlobalAveragePooling2D, BatchNormalization
+from keras.layers import Dense, Dropout, GlobalAveragePooling2D, BatchNormalization, Conv2D, MaxPooling2D, Flatten, Input, Activation, merge
 from keras.models import Model
 from keras.optimizers import Adam
 
 
 class CNN:
 
-    model = None
+    def __init__(self, outputs, input_shape, lr, decay, dropout):
 
-    def __init__(self, outputs, lr, decay, dropout):
+        img_input = Input(shape=input_shape)
+        x = Conv2D(64, (3, 3), padding="same")(img_input)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(64, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2))(x)
 
-        if type(self).__name__ == "VGG":
-            base = VGG16(weights="imagenet", include_top=False)
-        elif type(self).__name__ == "ResNet":
-            base = ResNet50(weights="imagenet", include_top=False)
-        elif type(self).__name__ == "Inception":
-            base = InceptionV3(weights="imagenet", include_top=False)
-        else:
-            raise ValueError("Invalid model name: {}".format(type(self).__name__))
+        x = Conv2D(128, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(128, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2))(x)
 
-        self.model = self.add_top(base, outputs, dropout)
+        x = Conv2D(256, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(256, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(256, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2))(x)
+
+        x = Conv2D(512, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(512, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(512, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2))(x)
+
+        x = Conv2D(512, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(512, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Conv2D(512, (3, 3), padding="same")(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2))(x)
+
+        x = Flatten()(x)
+        x = Dense(1024)(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Dropout(dropout)(x)
+        x = Dense(1024)(x)
+        x = BatchNormalization()(x)
+        x = Activation("relu")(x)
+        x = Dropout(dropout)(x)
+        predictions = Dense(outputs, activation="softmax")(x)
+
+        self.model = Model(inputs=img_input, outputs=predictions)
         opt = Adam(lr=lr, decay=decay)
         self.model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
 
 
-    def add_top(self, base_model, outputs, dropout):
-        x = base_model.output
+def Inception_FCN():
+
+    def __init__(self, outputs, input_shape, lr, decay, dropout):
+        img_input = Input(shape=input_shape)
+        x = inception_block(img_input)
+        x = inception_block(x)
+        x = inception_block(x)
+        x = inception_block(x)
+        x = Dropout(dropout)(x)
+        x = Conv2D(outputs, 3, 3, border_mode="same")(x)
         x = GlobalAveragePooling2D()(x)
-        x = Dense(1024, activation="relu")(x)
-        x = BatchNormalization()(x)
-        x = Dropout(dropout)(x)
-        x = Dense(1024, activation="relu")(x)
-        x = BatchNormalization()(x)
-        x = Dropout(dropout)(x)
-        predictions = Dense(outputs, activation="softmax")(x)
-        model = Model(inputs=base_model.input, outputs=predictions)
-        for layer in base_model.layers:
-            layer.trainable = False
-        return model
+        predictions = Activation("softmax")(x)
 
+        self.model = Model(inputs=img_input, outputs=predictions)
+        opt = Adam(lr=lr, decay=decay)
+        self.model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
+        
+    def Conv2D_bn(self, x, nb_filter, filter_size, subsample=(1, 1)):
+        x = Conv2D(nb_filter, filter_size, filter_size, subsample=subsample, activation='relu', border_mode='same')(x)
+        return BatchNormalization()(x)
 
-class VGG(CNN):
-    def __init__(self, outputs, lr, decay, dropout=0.6):
-        super(self.__class__, self).__init__(outputs, lr, decay, dropout)
+    def inception_block(x):
+        branch1x1 = Conv2D_bn(x, 32, 1, subsample=(2, 2))
 
+        branch5x5 = Conv2D_bn(x, 24, 1)
+        branch5x5 = Conv2D_bn(branch5x5, 32, 5, subsample=(2, 2))
 
-class Inception(CNN):
-    def __init__(self, outputs, lr, decay, dropout=0.5):
-        super(self.__class__, self).__init__(outputs, lr, decay, dropout)
+        branch3x3dbl = Conv2D_bn(x, 32, 1)
+        branch3x3dbl = Conv2D_bn(branch3x3dbl, 48, 3)
+        branch3x3dbl = Conv2D_bn(branch3x3dbl, 48, 3, subsample=(2, 2))
 
-
-class ResNet(CNN):
-    def __init__(self, outputs, lr, decay, dropout=0.5):
-        super(self.__class__, self).__init__(outputs, lr, decay, dropout)
+        branch_pool = AveragePooling2D((3, 3), strides=(2, 2), border_mode="same")(x)
+        branch_pool = Conv2D_bn(branch_pool, 16, 1)
+        return merge([branch1x1, branch5x5, branch3x3dbl, branch_pool], mode="concat", concat_axis=1)
