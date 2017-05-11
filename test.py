@@ -6,10 +6,10 @@ from models.cnn import VGG, Inception_FCN
 
 IMG_SIZE = 48
 BATCH_SIZE = 256
+OUTPUTS = 3
 TEST_FILE = "data/test_data.csv"
 
 test_datagen = ImageDataGenerator(rescale=1. / 255)
-
 
 validation_generator = test_datagen.flow_from_directory(
     "data/valid",
@@ -19,13 +19,27 @@ validation_generator = test_datagen.flow_from_directory(
     class_mode="categorical",
     shuffle=False)
 
+def preprocess(img):
+    img = img.reshape(IMG_SIZE, IMG_SIZE).astype("float32")
+    img /= 255
+    img = np.expand_dims(img, axis=0)
+    return np.expand_dims(img, axis=-1)
+
+def predict_ensemble(models, img):
+    predictions = np.zeros((len(models), 3))
+    for i in range(len(models)):
+        predictions[i] = models[i].predict(img)
+    return np.argmax(np.mean(predictions, axis=0)).squeeze()
+    
 if __name__ == "__main__":
     test_data = pd.read_csv(TEST_FILE, header=None).as_matrix()
-    
-    vgg = VGG(3, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
-    inception = Inception_FCN(3, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
+
+    vgg = VGG(OUTPUTS, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
+    inception = Inception_FCN(OUTPUTS, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
     vgg.model.load_weights(sys.argv[1])
     inception.model.load_weights(sys.argv[2])
+    models = [vgg.model, inception.model]
+
     vgg_predictions = vgg.model.predict_generator(validation_generator, steps=validation_generator.n)
     inception_predictions = inception.model.predict_generator(validation_generator, steps=validation_generator.n)
     mean_predictions = np.argmax((vgg_predictions + inception_predictions) / 2, axis=1)
@@ -39,11 +53,6 @@ if __name__ == "__main__":
     with open("results/submission.txt", "w+") as f:
         f.write("Id,Category\n")
         for i in range(len(test_data)):
-            img = test_data[i,:].reshape(IMG_SIZE, IMG_SIZE).astype("float32")
-            img /= 255
-            img = np.expand_dims(img, axis=0)
-            img = np.expand_dims(img, axis=-1)
-            vgg_prediction = vgg.model.predict(img)
-            inception_prediction = inception.model.predict(img)
-            prediction = np.argmax((vgg_prediction + inception_prediction) / 2, axis=1)
-            f.write("{},{}\n".format(i, prediction.squeeze()))
+            img = preprocess(test_data[i, :])
+            prediction = predict_ensemble(models, img)
+            f.write("{},{}\n".format(i, prediction))
