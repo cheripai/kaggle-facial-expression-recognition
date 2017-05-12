@@ -36,7 +36,7 @@ if __name__ == "__main__":
     print(cnn.model.summary())
     callbacks = [
         TensorBoard(), 
-        ModelCheckpoint("models/weights.h5", monitor="val_acc", save_best_only=True, save_weights_only=True),
+        ModelCheckpoint("results/weights.h5", monitor="val_acc", save_best_only=True, save_weights_only=True),
         EarlyStopping(monitor="val_acc", patience=20)
     ]
     cnn.model.fit_generator(
