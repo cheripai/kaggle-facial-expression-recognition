@@ -31,18 +31,21 @@ validation_generator = test_datagen.flow_from_directory(
     shuffle=False)
 
 if __name__ == "__main__":
-    # cnn = VGG(3, (48, 48, 1), lr=0.001, dropout=0.5, decay=0.0001)
-    cnn = Inception_FCN(3, (48, 48, 1), lr=0.001, dropout=0.4, decay=0.001)
-    print(cnn.model.summary())
-    callbacks = [
-        TensorBoard(), 
-        ModelCheckpoint("results/weights.h5", monitor="val_acc", save_best_only=True, save_weights_only=True),
-        EarlyStopping(monitor="val_acc", patience=20)
-    ]
-    cnn.model.fit_generator(
-        train_generator,
-        steps_per_epoch=train_generator.n // BATCH_SIZE + 1,
-        epochs=EPOCHS,
-        validation_data=validation_generator,
-        validation_steps=validation_generator.n // BATCH_SIZE + 1,
-        callbacks=callbacks)
+    vgg = VGG(3, (IMG_SIZE, IMG_SIZE, 1), lr=0.001, dropout=0.5, decay=0.0001)
+    inception = Inception_FCN(3, (IMG_SIZE, IMG_SIZE, 1), lr=0.001, dropout=0.4, decay=0.001)
+    cnns = [vgg, inception]
+    for cnn in cnns:
+        model_name = type(cnn).__name__
+        print("Training {}".format(model_name))
+        callbacks = [
+            TensorBoard(), 
+            ModelCheckpoint("results/{}.h5".format(model_name), monitor="val_acc", save_best_only=True, save_weights_only=True),
+            EarlyStopping(monitor="val_acc", patience=20)
+        ]
+        cnn.model.fit_generator(
+            train_generator,
+            steps_per_epoch=train_generator.n // BATCH_SIZE + 1,
+            epochs=EPOCHS,
+            validation_data=validation_generator,
+            validation_steps=validation_generator.n // BATCH_SIZE + 1,
+            callbacks=callbacks)

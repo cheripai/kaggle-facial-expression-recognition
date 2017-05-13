@@ -35,20 +35,19 @@ if __name__ == "__main__":
     test_data = pd.read_csv(TEST_FILE, header=None).as_matrix()
 
     vgg = VGG(OUTPUTS, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
-    inception = Inception_FCN(OUTPUTS, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
     vgg.model.load_weights(sys.argv[1])
+    inception = Inception_FCN(OUTPUTS, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
     inception.model.load_weights(sys.argv[2])
     models = [vgg.model, inception.model]
 
-    vgg_predictions = vgg.model.predict_generator(validation_generator, steps=validation_generator.n)
-    inception_predictions = inception.model.predict_generator(validation_generator, steps=validation_generator.n)
-    mean_predictions = np.argmax((vgg_predictions + inception_predictions) / 2, axis=1)
-    targets = np.array([])
+    predictions = np.zeros(validation_generator.n)
+    targets = np.zeros(validation_generator.n)
     for i, (img, target) in enumerate(validation_generator):
         if i >= validation_generator.n:
             break
-        targets = np.concatenate((targets, np.argmax(target, axis=1)))
-    print(np.sum(targets == mean_predictions) / validation_generator.n)
+        predictions[i] = predict_ensemble(models, img)
+        targets[i] = np.argmax(target, axis=1)
+    print("Accuracy: {}".format(np.mean(targets == predictions)))
 
     with open("results/submission.txt", "w+") as f:
         f.write("Id,Category\n")
