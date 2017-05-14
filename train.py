@@ -1,9 +1,9 @@
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 from keras.preprocessing.image import ImageDataGenerator
-from models.cnn import VGG, Inception_FCN
+from models.cnn import VGG, Inception_FCN, ResNet
 
 IMG_SIZE = 48
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 EPOCHS = 200
 
 train_datagen = ImageDataGenerator(
@@ -31,9 +31,11 @@ validation_generator = test_datagen.flow_from_directory(
     shuffle=False)
 
 if __name__ == "__main__":
-    vgg = VGG(3, (IMG_SIZE, IMG_SIZE, 1), lr=0.001, dropout=0.5, decay=0.0001)
-    inception = Inception_FCN(3, (IMG_SIZE, IMG_SIZE, 1), lr=0.001, dropout=0.4, decay=0.001)
-    cnns = [vgg, inception]
+    # vgg = VGG(3, (IMG_SIZE, IMG_SIZE, 1), lr=0.001, dropout=0.5, decay=0.0001)
+    # inception = Inception_FCN(3, (IMG_SIZE, IMG_SIZE, 1), lr=0.001, dropout=0.4, decay=0.001)
+    resnet = ResNet(3, (IMG_SIZE, IMG_SIZE, 1), lr=0.001, dropout=0.0, decay=0.001)
+    # cnns = [vgg, inception]
+    cnns = [resnet]
     for cnn in cnns:
         model_name = type(cnn).__name__
         print("Training {}".format(model_name))

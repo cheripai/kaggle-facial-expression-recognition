@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import sys
 from keras.preprocessing.image import ImageDataGenerator
-from models.cnn import VGG, Inception_FCN
+from models.cnn import VGG, Inception_FCN, ResNet
 
 IMG_SIZE = 48
 BATCH_SIZE = 256
@@ -38,7 +38,9 @@ if __name__ == "__main__":
     vgg.model.load_weights(sys.argv[1])
     inception = Inception_FCN(OUTPUTS, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
     inception.model.load_weights(sys.argv[2])
-    models = [vgg.model, inception.model]
+    resnet = ResNet(OUTPUTS, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
+    resnet.model.load_weights(sys.argv[3])
+    models = [vgg.model, inception.model, resnet.model]
 
     predictions = np.zeros(validation_generator.n)
     targets = np.zeros(validation_generator.n)

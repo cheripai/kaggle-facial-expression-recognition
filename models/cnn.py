@@ -1,5 +1,6 @@
+from keras.applications.resnet50 import identity_block, conv_block
 from keras.layers import Activation, AveragePooling2D, BatchNormalization, concatenate, Conv2D
-from keras.layers import Dense, Dropout, Flatten, GlobalAveragePooling2D, Input, MaxPooling2D
+from keras.layers import Dense, Dropout, Flatten, GlobalAveragePooling2D, Input, MaxPooling2D, ZeroPadding2D
 from keras.models import Model
 from keras.optimizers import Adam
 
@@ -12,8 +13,8 @@ class CNN:
         opt = Adam(lr=lr, decay=decay)
         self.model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
 
-    def Conv2D_bn(self, x, nb_filter, filter_size, strides=(1, 1)):
-        x = Conv2D(nb_filter, (filter_size, filter_size), strides=strides, padding='same')(x)
+    def Conv2D_bn(self, x, nb_filter, filter_size, strides=(1, 1), padding="same"):
+        x = Conv2D(nb_filter, (filter_size, filter_size), strides=strides, padding=padding)(x)
         x = BatchNormalization()(x)
         return Activation("relu")(x)
 
@@ -72,3 +73,30 @@ class Inception_FCN(CNN):
         branch_pool = AveragePooling2D((3, 3), strides=(2, 2), padding="same")(x)
         branch_pool = self.Conv2D_bn(branch_pool, 64, 1)
         return concatenate([branch1x1, branch5x5, branch3x3dbl, branch_pool], axis=-1)
+
+
+class ResNet(CNN):
+    def __init__(self, outputs, input_shape, lr=0.001, decay=0, dropout=0):
+        img_input = Input(shape=input_shape)
+
+        x = conv_block(img_input, 3, [32, 32, 128], stage=1, block="a", strides=(1, 1))
+        x = identity_block(x, 3, [32, 32, 128], stage=1, block="b")
+        x = identity_block(x, 3, [32, 32, 128], stage=1, block="c")
+
+        x = conv_block(x, 3, [64, 64, 256], stage=2, block="a")
+        x = identity_block(x, 3, [64, 64, 256], stage=2, block="b")
+        x = identity_block(x, 3, [64, 64, 256], stage=2, block="c")
+
+        x = conv_block(x, 3, [128, 128, 512], stage=3, block="a")
+        x = identity_block(x, 3, [128, 128, 512], stage=3, block="b")
+        x = identity_block(x, 3, [128, 128, 512], stage=3, block="c")
+
+        x = conv_block(x, 3, [256, 256, 1024], stage=4, block="a")
+        x = identity_block(x, 3, [256, 256, 1024], stage=4, block="b")
+        x = identity_block(x, 3, [256, 256, 1024], stage=4, block="c")
+
+        x = GlobalAveragePooling2D(name="global_avg_pool")(x)
+        predictions = Dense(outputs, activation="softmax")(x)
+
+        self.model = Model(inputs=img_input, outputs=predictions)
+        super().__init__(lr, decay)
