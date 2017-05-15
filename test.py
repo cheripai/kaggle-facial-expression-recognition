@@ -26,7 +26,7 @@ def preprocess(img):
     return np.expand_dims(img, axis=-1)
 
 def predict_ensemble(models, img):
-    predictions = np.zeros((len(models), 3))
+    predictions = np.zeros((len(models), OUTPUTS))
     for i in range(len(models)):
         predictions[i] = models[i].predict(img)
     return np.argmax(np.mean(predictions, axis=0)).squeeze()
