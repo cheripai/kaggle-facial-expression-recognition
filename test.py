@@ -25,11 +25,11 @@ def preprocess(img):
     img = np.expand_dims(img, axis=0)
     return np.expand_dims(img, axis=-1)
 
-def predict_ensemble(models, img):
+def predict_ensemble(models, img, weights=[1/3, 1/3, 1/3]):
     predictions = np.zeros((len(models), OUTPUTS))
     for i in range(len(models)):
         predictions[i] = models[i].predict(img)
-    return np.argmax(np.mean(predictions, axis=0)).squeeze()
+    return np.argmax(np.average(predictions, axis=0, weights=weights)).squeeze()
     
 if __name__ == "__main__":
     test_data = pd.read_csv(TEST_FILE, header=None).as_matrix()
@@ -41,13 +41,14 @@ if __name__ == "__main__":
     resnet = ResNet(OUTPUTS, (IMG_SIZE, IMG_SIZE, 1), lr=0, dropout=0, decay=0)
     resnet.model.load_weights(sys.argv[3])
     models = [vgg.model, inception.model, resnet.model]
+    weights = [0.3, 0.4, 0.3]
 
     predictions = np.zeros(validation_generator.n)
     targets = np.zeros(validation_generator.n)
     for i, (img, target) in enumerate(validation_generator):
         if i >= validation_generator.n:
             break
-        predictions[i] = predict_ensemble(models, img)
+        predictions[i] = predict_ensemble(models, img, weights)
         targets[i] = np.argmax(target, axis=1)
     print("Accuracy: {}".format(np.mean(targets == predictions)))
 
